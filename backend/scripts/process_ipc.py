@@ -4,8 +4,8 @@ import os
 from tqdm import tqdm
 
 # --- CONFIGURATION ---
-INPUT_FILE = "data/raw/ipc_1860.json"  # Make sure filename matches exactly
-OUTPUT_FILE = "data/processed/ipc_clean.csv"
+INPUT_FILE = "data/raw/crpc.json"  # Make sure filename matches exactly
+OUTPUT_FILE = "data/processed/crpc_clean.csv"
 
 def load_data(filepath):
     if not os.path.exists(filepath):

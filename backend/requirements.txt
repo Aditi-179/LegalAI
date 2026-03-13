@@ -1,0 +1,19 @@
+# Web Framework
+fastapi
+uvicorn[standard]
+
+# Database & ORM
+sqlalchemy
+psycopg2-binary
+supabase
+
+# Environment Variables
+python-dotenv
+
+# Authentication & Security
+passlib[bcrypt]
+python-jose[cryptography]
+
+# For later (AI & Vectors)
+sentence-transformers
+pandas

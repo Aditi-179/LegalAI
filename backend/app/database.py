@@ -3,9 +3,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENV_PATH = os.path.join(BASE_DIR, ".env")
 
-load_dotenv() # Load environment variables from .env file
-
+# Tell load_dotenv exactly where to look
+load_dotenv(dotenv_path=ENV_PATH) 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:

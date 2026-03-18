@@ -1,5 +1,6 @@
-from sqlalchemy import Column, String, Text, DateTime, UUID, Integer
+from sqlalchemy import Column, String, Text, DateTime, Integer, UUID
 from sqlalchemy.sql import func
+from pgvector.sqlalchemy import Vector # <-- NEW IMPORT
 import uuid
 from .database import Base
 
@@ -10,7 +11,6 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-# --- NEW MODEL FOR LEGAL TEXTS ---
 class LegalDocument(Base):
     __tablename__ = "legal_documents"
     
@@ -20,7 +20,8 @@ class LegalDocument(Base):
     section_title = Column(Text)
     rag_text = Column(Text, nullable=False)
     
-    # We will add the Vector (Embedding) column later during Phase 3
-    # embedding = Column(Vector(768)) 
+    # --- NOW ACTIVATED ---
+    # 768 dimensions matches the 'all-mpnet-base-v2' AI model we will use
+    embedding = Column(Vector(768)) 
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())

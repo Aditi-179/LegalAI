@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
 
-const workspaceRoutes = ["/chat", "/mapping", "/upload", "/draft", "/history"];
+const workspaceRoutes = ["/chat"];
 
 export function RootFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

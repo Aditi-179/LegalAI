@@ -1,6 +1,18 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1";
-const TOKEN_KEY = "legalai_token";
-const USER_KEY = "legalai_user";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
+
+export type Citation = {
+  act_name: string;
+  section: string;
+  title: string;
+  content: string;
+  score: number;
+};
+
+export type ChatResponse = {
+  query: string;
+  answer: string;
+  citations: Citation[];
+};
 
 type LoginPayload = { email: string; password: string };
 type RegisterPayload = { name: string; email: string; password: string };
@@ -13,58 +25,23 @@ type DraftPayload = {
   extra_instructions: string;
 };
 
-function getToken() {
-  if (typeof window === "undefined") {
-    return "";
-  }
-  return window.localStorage.getItem(TOKEN_KEY) ?? "";
-}
-
-export function storeToken(token: string) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(TOKEN_KEY, token);
-  }
-}
-
-export function storeSession(token: string, user: { name: string; email?: string }) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(TOKEN_KEY, token);
-    window.localStorage.setItem(USER_KEY, JSON.stringify(user));
-  }
-}
-
-export function getStoredUser() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const raw = window.localStorage.getItem(USER_KEY);
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(raw) as { name: string; email?: string };
-  } catch {
-    return null;
-  }
-}
-
-export function clearSession() {
-  if (typeof window !== "undefined") {
-    window.localStorage.removeItem(TOKEN_KEY);
-    window.localStorage.removeItem(USER_KEY);
-  }
-}
+type LoginResponse = { access_token: string; user: { name: string; email?: string } };
+type MappingResponse = {
+  ipc_section: string;
+  bns_section: string;
+  title: string;
+  summary: string;
+  notes: string;
+  source: string;
+};
+type UploadResponse = { filename: string; explanation: string; highlights: string[] };
+type DraftResponse = { content: string };
+type HistoryItem = { kind: string; title: string; summary: string; created_at: string };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
-  const token = getToken();
   if (!headers.has("Content-Type") && !(init?.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
-  }
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -80,57 +57,57 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function registerUser(payload: RegisterPayload) {
-  return request("/auth/register", {
+export async function queryAssistant(query: string, topK = 4) {
+  return request<ChatResponse>("/chat", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ query, top_k: topK }),
   });
 }
 
-export async function loginUser(payload: LoginPayload) {
-  return request<{ access_token: string; user: { name: string; email?: string } }>("/auth/login", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+function unsupported(feature: string): never {
+  throw new Error(`${feature} is not available in the current backend. Use the chat assistant flow instead.`);
 }
 
-export async function queryAssistant(question: string) {
-  return request<{ answer: string; contexts: string[] }>("/query", {
-    method: "POST",
-    body: JSON.stringify({ question }),
-  });
+export function storeToken(token: string) {
+  void token;
 }
 
-export async function fetchMapping(code: string) {
-  return request<{
-    ipc_section: string;
-    bns_section: string;
-    title: string;
-    summary: string;
-    notes: string;
-    source: string;
-  }>(`/map?code=${encodeURIComponent(code)}`);
+export function storeSession(token: string, user: { name: string; email?: string }) {
+  void token;
+  void user;
 }
 
-export async function explainDocument(file: File) {
-  const formData = new FormData();
-  formData.append("file", file);
-  return request<{ filename: string; explanation: string; highlights: string[] }>("/upload", {
-    method: "POST",
-    body: formData,
-  });
+export function getStoredUser() {
+  return null;
 }
 
-export async function createDraft(payload: DraftPayload) {
-  return request<{ content: string }>("/draft", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+export function clearSession() {}
+
+export async function registerUser(payload: RegisterPayload): Promise<void> {
+  void payload;
+  unsupported("Registration");
 }
 
-export async function fetchHistory() {
-  const data = await request<{ items: { kind: string; title: string; summary: string; created_at: string }[] }>(
-    "/history",
-  );
-  return data.items;
+export async function loginUser(payload: LoginPayload): Promise<LoginResponse> {
+  void payload;
+  unsupported("Login");
+}
+
+export async function fetchMapping(code: string): Promise<MappingResponse> {
+  void code;
+  unsupported("IPC/BNS mapping");
+}
+
+export async function explainDocument(file: File): Promise<UploadResponse> {
+  void file;
+  unsupported("Document explanation");
+}
+
+export async function createDraft(payload: DraftPayload): Promise<DraftResponse> {
+  void payload;
+  unsupported("Draft generation");
+}
+
+export async function fetchHistory(): Promise<HistoryItem[]> {
+  unsupported("History");
 }

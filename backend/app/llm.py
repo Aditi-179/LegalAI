@@ -43,7 +43,7 @@ RULES:
 4. Keep your answer simple and structured.
 
 FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
-
+git status
 Explanation:
 Explain the law in simple language.
 

@@ -4,3 +4,10 @@ sqlalchemy
 python-dotenv
 python-multipart
 pandas
+passlib[bcrypt]
+python-jose[cryptography]
+sentence-transformers
+pgvector
+groq
+psycopg2-binary
+tqdm

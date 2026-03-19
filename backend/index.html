@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nyaya - Indian Legal AI Assistant</title>
+    <style>
+        :root {
+            --bg-color: #f9fafb;
+            --chat-bg: #ffffff;
+            --primary: #1e3a8a; /* Deep Blue for Law */
+            --primary-hover: #1e40af;
+            --user-msg: #eff6ff;
+            --bot-msg: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #1f2937;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: var(--text-main);
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background: var(--chat-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        #header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .badge {
+            font-size: 0.75rem;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        #chat-window {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: #f8fafc;
+        }
+
+        .message-row {
+            display: flex;
+            flex-direction: column;
+            max-width: 85%;
+        }
+
+        .user-row { align-self: flex-end; }
+        .bot-row { align-self: flex-start; }
+
+        .message-bubble {
+            padding: 15px 20px;
+            border-radius: 18px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .user-bubble {
+            background-color: var(--primary);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-bubble {
+            background-color: var(--bot-msg);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            color: var(--text-main);
+        }
+
+        /* Styling the Markdown from Groq */
+        .bot-bubble strong { color: var(--primary); }
+        .bot-bubble ul { margin-top: 8px; padding-left: 20px; }
+        .bot-bubble li { margin-bottom: 5px; }
+
+        /* The Sources/Citations Section */
+        .sources-container {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+        
+        .sources-title {
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .source-card {
+            background: var(--bg-color);
+            border-left: 3px solid var(--primary);
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .source-card:hover {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        #input-container {
+            padding: 15px 20px;
+            background: var(--chat-bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+        }
+
+        #query-input {
+            flex: 1;
+            padding: 14px 20px;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+            background: var(--bg-color);
+        }
+
+        #query-input:focus { border-color: var(--primary); }
+
+        #send-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 24px;
+            border-radius: 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #send-btn:hover { background: var(--primary-hover); }
+        #send-btn:disabled { background: var(--text-muted); cursor: not-allowed; }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 5px;
+        }
+        .dot {
+            width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div id="header">
+        <span>⚖️ Nyaya AI</span>
+        <span class="badge">Llama 3.1 + RAG</span>
+    </div>
+    
+    <div id="chat-window">
+        <!-- Initial Greeting -->
+        <div class="message-row bot-row">
+            <div class="message-bubble bot-bubble">
+                Namaste! I am your AI Legal Assistant. I can explain Indian laws (IPC, BNS, CrPC, etc.) in simple terms based on the official legal codes.
+                <br><br>
+                Try asking: <i>"My neighbor stole my motorcycle. What is the punishment?"</i>
+            </div>
+        </div>
+    </div>
+
+    <div id="input-container">
+        <input type="text" id="query-input" placeholder="Ask your legal question here..." onkeypress="handleEnter(event)">
+        <button id="send-btn" onclick="sendQuery()">Ask AI</button>
+    </div>
+</div>
+
+<script>
+    const chatWindow = document.getElementById("chat-window");
+    const queryInput = document.getElementById("query-input");
+    const sendBtn = document.getElementById("send-btn");
+
+    function scrollToBottom() {
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function appendUserMessage(text) {
+        const html = `
+            <div class="message-row user-row">
+                <div class="message-bubble user-bubble">${text}</div>
+            </div>`;
+        chatWindow.insertAdjacentHTML('beforeend', html);
+        scrollToBottom();
+    }
+
+    function appendBotLoading() {
+        const id = 'loading-' + Date.now();
+        const html = `
+            <div id="${id}" class="message-row bot-row">
+                <div class="message-bubble bot-bubble">
+                    <div class="typing-indicator">
+                        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                    </div>
+                </div>
+            </div>`;
+        chatWindow.insertAdjacentHTML('beforeend', html);
+        scrollToBottom();
+        return id;
+    }
+
+    // Simple markdown parser to handle Bold and Newlines from Groq
+    function formatMarkdown(text) {
+        let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold
+        formatted = formatted.replace(/\n/g, '<br>'); // Newlines
+        return formatted;
+    }
+
+    function appendBotResponse(data, loadingId) {
+        // Remove loading indicator
+        document.getElementById(loadingId).remove();
+
+        // 1. Format the AI's English Answer
+        let answerHtml = formatMarkdown(data.answer);
+
+        // 2. Build the Citations Section (If laws were found)
+        let citationsHtml = '';
+        if (data.citations && data.citations.length > 0) {
+            citationsHtml = `<div class="sources-container">
+                                <div class="sources-title">📚 Official Sources Referenced</div>`;
+            
+            data.citations.forEach(doc => {
+                // Clicking a source shows the full raw text in an alert (or expands it)
+                const safeContent = doc.content.replace(/"/g, '&quot;');
+                citationsHtml += `
+                    <div class="source-card" title="${safeContent}">
+                        <strong>${doc.act_name} Sec ${doc.section}</strong>: ${doc.title} 
+                        <span style="float:right; font-size:0.75rem;">Confidence: ${(doc.score * 100).toFixed(1)}%</span>
+                    </div>`;
+            });
+            citationsHtml += `</div>`;
+        }
+
+        // 3. Inject into chat
+        const finalHtml = `
+            <div class="message-row bot-row">
+                <div class="message-bubble bot-bubble">
+                    ${answerHtml}
+                    ${citationsHtml}
+                </div>
+            </div>`;
+        
+        chatWindow.insertAdjacentHTML('beforeend', finalHtml);
+        scrollToBottom();
+    }
+
+    async function sendQuery() {
+        const query = queryInput.value.trim();
+        if (!query) return;
+
+        // UI State: Disable input
+        queryInput.value = "";
+        queryInput.disabled = true;
+        sendBtn.disabled = true;
+
+        appendUserMessage(query);
+        const loadingId = appendBotLoading();
+
+        try {
+            // CALL YOUR FASTAPI BACKEND
+            const response = await fetch("http://127.0.0.1:8000/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: query, top_k: 4 })
+            });
+
+            if (!response.ok) throw new Error("Backend returned an error.");
+            
+            const data = await response.json();
+            appendBotResponse(data, loadingId);
+
+        } catch (error) {
+            console.error(error);
+            document.getElementById(loadingId).remove();
+            const errorHtml = `
+                <div class="message-row bot-row">
+                    <div class="message-bubble bot-bubble" style="color: #dc2626;">
+                        ⚠️ Connection Error: Ensure your Uvicorn server is running on port 8000 and the Groq API key is valid.
+                    </div>
+                </div>`;
+            chatWindow.insertAdjacentHTML('beforeend', errorHtml);
+        } finally {
+            // Restore UI State
+            queryInput.disabled = false;
+            sendBtn.disabled = false;
+            queryInput.focus();
+            scrollToBottom();
+        }
+    }
+
+    function handleEnter(e) {
+        if (e.key === "Enter") sendQuery();
+    }
+</script>
+
+</body>
+</html>

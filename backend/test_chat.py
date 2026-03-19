@@ -1,12 +1,12 @@
 import os
 import sys
 
-# Add backend dir to python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from app.database import SessionLocal
-from app.retrieval import hybrid_search
+from app.db.session import SessionLocal
 from app.llm import generate_legal_response
+from app.retrieval import hybrid_search
+
 
 def test():
     db = SessionLocal()
@@ -14,8 +14,8 @@ def test():
     try:
         print("Testing hybrid_search...")
         docs = hybrid_search(db, query, top_k=2)
-        print("Retrieved docs:", [doc.get('title') for doc in docs])
-        
+        print("Retrieved docs:", [doc.get("title") for doc in docs])
+
         print("\nTesting LLM generation...")
         answer = generate_legal_response(query, docs)
         print("AI Answer:", answer[:100] + "...")
@@ -24,6 +24,7 @@ def test():
         print("ERROR:", e)
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     test()

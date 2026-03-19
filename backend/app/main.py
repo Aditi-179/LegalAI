@@ -1,5 +1,8 @@
-from fastapi import FastAPI, Depends, HTTPException
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+<<<<<<< HEAD
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Dict
@@ -8,26 +11,41 @@ from . import models
 from .database import SessionLocal, engine
 from .retrieval import hybrid_search
 from .llm import generate_legal_response
+=======
+from fastapi.responses import JSONResponse
 
-models.Base.metadata.create_all(bind=engine)
+from app.api.router import api_router
+from app.core.config import settings
+from app.db.base import Base
+from app.db.session import engine
+from app.services.seed import seed_defaults
+>>>>>>> origin/main
 
-app = FastAPI(title="Indian Legal AI API", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    seed_defaults()
+    yield
+
+
+app = FastAPI(
+    title=settings.app_name,
+    description="Backend services for LegalAI, including auth, legal Q&A, mapping, uploads, and drafting.",
+    version="1.0.0",
+    lifespan=lifespan,
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[settings.frontend_url, "http://127.0.0.1:3000", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
+<<<<<<< HEAD
 # Request Model (optional: can remove if unused)
 class QueryRequest(BaseModel):
     query: str
@@ -36,23 +54,22 @@ class QueryRequest(BaseModel):
 class ChatRequest(BaseModel):
     query: str
     chat_history: List[Dict] = []
+=======
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(_: Request, exc: Exception) -> JSONResponse:
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Unexpected server error.", "error": str(exc)},
+    )
+>>>>>>> origin/main
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Indian Legal AI API"}
 
-@app.get("/health")
-def health_check():
-    return {"status": "success", "message": "Backend is running!"}
+@app.get("/", tags=["system"])
+def root() -> dict[str, str]:
+    return {"message": "LegalAI backend is online."}
 
-@app.get("/test-db")
-def test_database_connection(db: Session = Depends(get_db)):
-    try:
-        db.execute('SELECT 1')
-        return {"status": "success", "message": "Database connection is healthy!"}
-    except Exception as e:
-        return {"status": "error", "message": f"Database connection failed: {str(e)}"}
 
+<<<<<<< HEAD
 # --- CHAT ENDPOINT (RAG + MEMORY) ---
 @app.post("/chat")
 def chat(req: ChatRequest, db: Session = Depends(get_db)):
@@ -75,3 +92,6 @@ def chat(req: ChatRequest, db: Session = Depends(get_db)):
         "answer": ai_answer,
         "citations": retrieved_laws
     }
+=======
+app.include_router(api_router, prefix="/api/v1")
+>>>>>>> origin/main

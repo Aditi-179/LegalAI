@@ -300,6 +300,14 @@ FakesAssemblies/
 # Node.js Tools for Visual Studio
 .ntvs_analysis.dat
 node_modules/
+.next/
+frontend/.next/
+frontend/.env.local
+backend/.venv/
+backend/legal_ai.db
+backend/data/uploads/
+*.sqlite3
+*.db
 
 # Visual Studio 6 build log
 *.plg
@@ -417,3 +425,4 @@ FodyWeavers.xsd
 *.msm
 *.msp
 venv
+.venv

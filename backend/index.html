@@ -222,6 +222,9 @@
     const queryInput = document.getElementById("query-input");
     const sendBtn = document.getElementById("send-btn");
 
+    // ✅ NEW: Chat memory
+    let chatHistory = [];
+
     function scrollToBottom() {
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
@@ -250,28 +253,23 @@
         return id;
     }
 
-    // Simple markdown parser to handle Bold and Newlines from Groq
     function formatMarkdown(text) {
-        let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold
-        formatted = formatted.replace(/\n/g, '<br>'); // Newlines
+        let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        formatted = formatted.replace(/\n/g, '<br>');
         return formatted;
     }
 
     function appendBotResponse(data, loadingId) {
-        // Remove loading indicator
         document.getElementById(loadingId).remove();
 
-        // 1. Format the AI's English Answer
         let answerHtml = formatMarkdown(data.answer);
 
-        // 2. Build the Citations Section (If laws were found)
         let citationsHtml = '';
         if (data.citations && data.citations.length > 0) {
             citationsHtml = `<div class="sources-container">
                                 <div class="sources-title">📚 Official Sources Referenced</div>`;
             
             data.citations.forEach(doc => {
-                // Clicking a source shows the full raw text in an alert (or expands it)
                 const safeContent = doc.content.replace(/"/g, '&quot;');
                 citationsHtml += `
                     <div class="source-card" title="${safeContent}">
@@ -282,7 +280,6 @@
             citationsHtml += `</div>`;
         }
 
-        // 3. Inject into chat
         const finalHtml = `
             <div class="message-row bot-row">
                 <div class="message-bubble bot-bubble">
@@ -299,30 +296,47 @@
         const query = queryInput.value.trim();
         if (!query) return;
 
-        // UI State: Disable input
         queryInput.value = "";
         queryInput.disabled = true;
         sendBtn.disabled = true;
 
         appendUserMessage(query);
+
+        // ✅ SAVE USER MESSAGE
+        chatHistory.push({
+            role: "user",
+            content: query
+        });
+
         const loadingId = appendBotLoading();
 
         try {
-            // CALL YOUR FASTAPI BACKEND
             const response = await fetch("http://127.0.0.1:8000/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query: query, top_k: 4 })
+                body: JSON.stringify({ 
+                    query: query, 
+                    top_k: 4,
+                    chat_history: chatHistory   // ✅ SEND MEMORY
+                })
             });
 
             if (!response.ok) throw new Error("Backend returned an error.");
             
             const data = await response.json();
+
             appendBotResponse(data, loadingId);
+
+            // ✅ SAVE BOT RESPONSE
+            chatHistory.push({
+                role: "assistant",
+                content: data.answer
+            });
 
         } catch (error) {
             console.error(error);
             document.getElementById(loadingId).remove();
+
             const errorHtml = `
                 <div class="message-row bot-row">
                     <div class="message-bubble bot-bubble" style="color: #dc2626;">
@@ -330,8 +344,8 @@
                     </div>
                 </div>`;
             chatWindow.insertAdjacentHTML('beforeend', errorHtml);
+
         } finally {
-            // Restore UI State
             queryInput.disabled = false;
             sendBtn.disabled = false;
             queryInput.focus();

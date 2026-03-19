@@ -15,13 +15,13 @@ client = Groq(api_key=GROQ_API_KEY)
 # We use Llama 3.1 8B because it is lightning fast and excellent at reasoning
 MODEL_NAME = "llama-3.1-8b-instant"
 
-def generate_legal_response(user_query: str, retrieved_contexts: list) -> str:
+def generate_legal_response(user_query: str, retrieved_contexts: list, chat_history: list = None) -> str:
     """
-    Takes the user's question and the laws retrieved from Supabase,
-    and asks Groq to generate a simple, accurate legal explanation.
+    Takes the user's question, previous conversation (chat_history),
+    and retrieved laws, and generates a conversational legal response.
     """
-    
-    # 1. Format the retrieved laws into a single readable string for the AI
+
+    # 1. Format retrieved laws
     context_text = ""
     if not retrieved_contexts:
         context_text = "No specific laws were found in the database."
@@ -32,40 +32,76 @@ def generate_legal_response(user_query: str, retrieved_contexts: list) -> str:
             context_text += f"Section {doc['section']}: {doc['title']}\n"
             context_text += f"Content: {doc['content']}\n\n"
 
-    # 2. The System Prompt (The AI's rules)
+    # 2. Format conversation history
+    history_text = ""
+    if chat_history:
+        for msg in chat_history:
+            history_text += f"{msg['role'].upper()}: {msg['content']}\n"
+
+    # 3. System prompt (same but slightly stronger for context awareness)
     system_prompt = """
-You are an expert Indian Legal Assistant. Your job is to explain Indian laws to common citizens in simple, easy-to-understand English.
+You are a friendly and supportive AI Legal Assistant helping common people in India.
 
-RULES:
-1. You MUST base your answer ONLY on the 'Retrieved Legal Context' provided below.
-2. If the context does not contain the answer, you MUST say: "I'm sorry, I cannot find the exact law for this in my database." Do not hallucinate or guess.
-3. Always cite the specific Act and Section number (e.g., "According to Section 420 of the IPC...").
-4. Keep your answer simple and structured.
+Your goal is to have a NATURAL CONVERSATION, not just give structured answers.
 
-FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
-git status
+IMPORTANT BEHAVIOR:
+- Always consider the full conversation history
+- If the user gives a short reply like "2 men", "yes", "no", treat it as CONTEXT CONTINUATION
+- DO NOT restart the explanation from scratch every time
+- CONTINUE from previous response
+
+STYLE:
+- Talk like a human
+- Be empathetic
+- Keep it simple
+
+WHEN USER FIRST ASKS:
+Give full structured answer:
+
 Explanation:
-Explain the law in simple language.
+...
 
 Next Steps:
-Give 3-5 clear actionable steps the user should take.
+...
 
-Important Notes:
-Mention documents needed, warnings, or precautions.
+Where to Take Action:
+...
+
+Follow-up Questions:
+...
+
+WHEN USER REPLIES (FOLLOW-UP):
+- Do NOT repeat full structure
+- Respond conversationally
+- Acknowledge what user said
+- Expand or refine guidance
+
+Example:
+User: men harassed on train  
+User: 2 men  
+
+You should respond like:
+"I understand, so two men were involved. That makes the situation more serious..."
+
+Then continue guidance naturally.
 
 Disclaimer:
 This is AI-generated information, not professional legal advice.
 """
 
-    # 3. Construct the prompt
+    # 4. Construct prompt with memory
     user_prompt = f"""
-    USER QUESTION: {user_query}
-    
-    RETRIEVED LEGAL CONTEXT:
-    {context_text}
-    """
+CONVERSATION HISTORY:
+{history_text}
 
-    # 4. Call the Groq API
+CURRENT USER INPUT:
+{user_query}
+
+RETRIEVED LEGAL CONTEXT:
+{context_text}
+"""
+
+    # 5. Call Groq API
     try:
         response = client.chat.completions.create(
             model=MODEL_NAME,
@@ -73,11 +109,11 @@ This is AI-generated information, not professional legal advice.
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.3, # Low temperature means more factual, less creative
+            temperature=0.3,
             max_tokens=1024
         )
-        
+
         return response.choices[0].message.content
-        
+
     except Exception as e:
         return f"Error communicating with AI: {str(e)}"

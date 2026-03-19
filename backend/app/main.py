@@ -49,7 +49,37 @@ def test_database_connection(db: Session = Depends(get_db)):
         return {"status": "error", "message": f"Database connection failed: {str(e)}"}
 
 # --- THE NEW RAG ENDPOINT ---
-@app.post("/chat") # Changed name from /search to /chat
+from pydantic import BaseModel
+from typing import List, Dict
+
+class ChatRequest(BaseModel):
+    query: str
+    chat_history: List[Dict] = []
+
+@app.post("/chat")
+def chat(req: ChatRequest, db: Session = Depends(get_db)):
+    print(f"User asked: {req.query}")
+
+    # 🔍 Step 1: Retrieve relevant laws (RAG)
+    retrieved_laws = hybrid_search(db=db, query=req.query, top_k=4)
+
+    if isinstance(retrieved_laws, dict) and "error" in retrieved_laws:
+        raise HTTPException(status_code=500, detail=retrieved_laws["error"])
+
+    # 🤖 Step 2: Generate AI response WITH MEMORY
+    ai_answer = generate_legal_response(
+        user_query=req.query,
+        retrieved_contexts=retrieved_laws,
+        chat_history=req.chat_history
+    )
+
+    # 📦 Step 3: Return response + citations
+    return {
+        "answer": ai_answer,
+        "citations": retrieved_laws
+    }
+
+    return {"answer": response}
 def chat_with_legal_ai(request: QueryRequest, db: Session = Depends(get_db)):
     """
     Full RAG Pipeline:

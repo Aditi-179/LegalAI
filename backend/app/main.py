@@ -2,11 +2,12 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from typing import List, Dict
 
 from . import models
 from .database import SessionLocal, engine
 from .retrieval import hybrid_search
-from .llm import generate_legal_response # <-- IMPORT THE NEW AI ENGINE
+from .llm import generate_legal_response
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -27,10 +28,14 @@ def get_db():
     finally:
         db.close()
 
-# Request Model
+# Request Model (optional: can remove if unused)
 class QueryRequest(BaseModel):
     query: str
-    top_k: int = 4 # Let's fetch the top 4 laws to give the AI more context
+    top_k: int = 4
+
+class ChatRequest(BaseModel):
+    query: str
+    chat_history: List[Dict] = []
 
 @app.get("/")
 def read_root():
@@ -48,32 +53,24 @@ def test_database_connection(db: Session = Depends(get_db)):
     except Exception as e:
         return {"status": "error", "message": f"Database connection failed: {str(e)}"}
 
-# --- THE NEW RAG ENDPOINT ---
-from pydantic import BaseModel
-from typing import List, Dict
-
-class ChatRequest(BaseModel):
-    query: str
-    chat_history: List[Dict] = []
-
+# --- CHAT ENDPOINT (RAG + MEMORY) ---
 @app.post("/chat")
 def chat(req: ChatRequest, db: Session = Depends(get_db)):
     print(f"User asked: {req.query}")
 
-    # 🔍 Step 1: Retrieve relevant laws (RAG)
+    # 🔍 Retrieve relevant laws
     retrieved_laws = hybrid_search(db=db, query=req.query, top_k=4)
 
     if isinstance(retrieved_laws, dict) and "error" in retrieved_laws:
         raise HTTPException(status_code=500, detail=retrieved_laws["error"])
 
-    # 🤖 Step 2: Generate AI response WITH MEMORY
+    # 🤖 Generate AI response with memory
     ai_answer = generate_legal_response(
         user_query=req.query,
         retrieved_contexts=retrieved_laws,
         chat_history=req.chat_history
     )
 
-    # 📦 Step 3: Return response + citations
     return {
         "answer": ai_answer,
         "citations": retrieved_laws

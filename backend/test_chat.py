@@ -28,3 +28,15 @@ def test():
 
 if __name__ == "__main__":
     test()
+
+from features.draft_generator.service import generate_draft
+
+data = {
+    "name": "Aisha",
+    "date": "10 April",
+    "location": "Mumbai",
+    "description": "My phone was stolen in a train"
+}
+
+result = generate_draft(data)
+print(result)

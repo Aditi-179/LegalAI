@@ -4,7 +4,8 @@ import { RootFrame } from "@/components/root-frame";
 
 export const metadata: Metadata = {
   title: "LegalAI Workspace",
-  description: "LegalAI frontend for legal research, mapping, document explanation, and drafting.",
+  description:
+    "LegalAI frontend for legal research, document explanation, and drafting.",
 };
 
 export default function RootLayout({

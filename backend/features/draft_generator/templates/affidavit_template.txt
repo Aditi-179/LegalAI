@@ -1,0 +1,25 @@
+FORMAT OF AFFIDAVIT / DECLARATION
+
+IN THE COURT OF __________________________
+
+AFFIDAVIT of {parties}
+
+I, the above-named deponent, do hereby solemnly affirm and state on oath as under:
+
+1. That I am the deponent herein and am fully conversant with the facts and circumstances of the case, thereby competent to swear this affidavit.
+
+2. That the following facts are true to my knowledge:
+{facts}
+
+3. {relief_sought}
+
+{extra_instructions}
+
+
+DEPONENT
+
+VERIFICATION:
+Verified at ____________ on this ____ day of __________, 20__, that the contents of the above affidavit are true and correct to the best of my knowledge and belief, no part of it is false, and nothing material has been concealed therefrom.
+
+
+DEPONENT

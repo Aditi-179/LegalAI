@@ -1,0 +1,28 @@
+To,
+The Station House Officer (SHO),
+{parties}
+
+Date: [Insert Date]
+
+Subject: Request for registering FIR regarding {title}
+
+Respected Sir/Madam,
+
+Complaint on behalf of [Complainant Name] against [Accused Name, if known] for offences under the relevant sections of the law.
+
+That the complainant's name is [Complainant Name] and the present complaint is being filed regarding the following incident:
+
+{facts}
+
+It is prayed that an FIR may kindly be registered, the matter be investigated at the earliest, and the accused be brought to the books and tried as per law.
+
+{relief_sought}
+
+{extra_instructions}
+
+Thanking you,
+
+Signature of Complainant
+Name:
+Address:
+Contact Number:

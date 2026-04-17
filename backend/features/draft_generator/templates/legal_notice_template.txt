@@ -1,0 +1,31 @@
+LEGAL NOTICE
+(Sent through Registered Post / Speed Post / Email)
+
+Ref. No.: ____________                                   Date: ____________
+
+To,
+{parties}
+
+Subject: Legal Notice under relevant provisions of law regarding {title}
+
+Sir/Madam,
+
+Under instructions from and on behalf of my client [Client Name], resident of [Client Address], I hereby serve upon you the following Legal Notice:
+
+1. That my client states...
+{facts}
+
+2. That due to the aforementioned circumstances, you are hereby called upon to:
+{relief_sought}
+
+3. That you are granted a period of [Days, e.g., 15 days] from the receipt of this notice to explicitly comply with the aforementioned demands.
+
+4. Please take note that failing compliance, my client possesses strict instructions to initiate civil and/or criminal proceedings against you in a court of competent jurisdiction entirely at your risk, cost, and consequences.
+
+{extra_instructions}
+
+Copy retained for record.
+
+[Advocate Name]
+Advocate, [Court Name]
+Signature & Seal

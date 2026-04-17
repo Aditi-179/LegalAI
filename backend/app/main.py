@@ -1,54 +1,76 @@
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Dict
-
-from features.draft_generator.routes import router as draft_router
+from .retrieval import hybrid_search
 from .llm import generate_legal_response
+from fastapi.responses import JSONResponse
+from app.api.router import api_router
+from app.core.config import settings
+from app.db.base import Base
+from app.db.session import engine, SessionLocal, get_db
+from app.services.seed import seed_defaults
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    seed_defaults()
+    yield
+app = FastAPI(
+    title=settings.app_name,
+    description="Backend services for LegalAI, including auth, legal Q&A, mapping, uploads, and drafting.",
+    version="1.0.0",
+    lifespan=lifespan,
+)
 
-
-# ✅ Create app FIRST
-app = FastAPI(title="Indian Legal AI API", version="1.0.0")
-
-
-# ✅ Then include router
-app.include_router(draft_router, prefix="/draft")
-
-
-# ✅ Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Request Model (optional: can remove if unused)
+class QueryRequest(BaseModel):
+    query: str
+    top_k: int = 4
 
-# ✅ Request model
 class ChatRequest(BaseModel):
     query: str
     chat_history: List[Dict] = []
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(_: Request, exc: Exception) -> JSONResponse:
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Unexpected server error.", "error": str(exc)},
+    )
 
-
-# ✅ Root
-@app.get("/")
-def root():
+@app.get("/", tags=["system"])
+def root() -> dict[str, str]:
     return {"message": "LegalAI backend is online."}
 
-
-# ✅ Chat endpoint
+# --- CHAT ENDPOINT (RAG + MEMORY) ---
 @app.post("/chat")
-def chat(req: ChatRequest):
+def chat(req: ChatRequest, db: Session = Depends(get_db)):
     print(f"User asked: {req.query}")
 
+    # 🔍 Retrieve relevant laws
+    retrieved_laws = hybrid_search(db=db, query=req.query, top_k=4)
+
+    if isinstance(retrieved_laws, dict) and "error" in retrieved_laws:
+        raise HTTPException(status_code=500, detail=retrieved_laws["error"])
+
+    # 🤖 Generate AI response with memory
     ai_answer = generate_legal_response(
         user_query=req.query,
-        retrieved_contexts=[],
+        retrieved_contexts=retrieved_laws,
         chat_history=req.chat_history
     )
 
     return {
         "answer": ai_answer,
-        "citations": []
+        "citations": retrieved_laws
     }
+app.include_router(api_router, prefix="/api/v1")

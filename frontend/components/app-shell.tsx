@@ -156,8 +156,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#bea97c] text-base font-semibold text-white">
               L
             </div>
+            {/*  CHANGE 1: LegalAI brand text — lighter gold-tan */}
             <span
-              className={`text-base font-semibold tracking-wide text-[#2f2924] ${isCollapsed ? "hidden" : "block"}`}
+              className={`text-base font-semibold tracking-wide text-[#c4ae8a] ${isCollapsed ? "hidden" : "block"}`}
             >
               LegalAI
             </span>
@@ -193,7 +194,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={item.href}
                 className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition ${
                   isActive
-                    ? "bg-[#ede4d7] text-[#2f2924]"
+                    ? //  CHANGE 2: Active nav — subtle muted beige, no harsh contrast
+                      "bg-[#ddd0c0]/60 text-[#c4ae8a]"
                     : "text-[#5f574c] hover:bg-[#efe7dd] hover:text-[#2f2924]"
                 }`}
               >
@@ -212,7 +214,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {userName.slice(0, 1).toUpperCase()}
             </div>
             <div className={`${isCollapsed ? "hidden" : "block"} min-w-0`}>
-              <div className="text-sm font-semibold text-[#2f2924] truncate">
+              {/*  CHANGE 3: User name — lighter warm tan */}
+              <div className="text-sm font-semibold text-[#b8a07a] truncate">
                 {userName}
               </div>
               <div className="text-xs text-[#6f6558] truncate">{userEmail}</div>

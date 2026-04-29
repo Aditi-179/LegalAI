@@ -4,87 +4,116 @@ import { FormEvent, useState, useTransition } from "react";
 
 import { createDraft } from "@/lib/api";
 
-const draftTypes = ["Legal Notice", "Complaint", "Affidavit", "Agreement"];
-
 export function DraftBuilder() {
   const [form, setForm] = useState({
-    draft_type: "Legal Notice",
-    title: "Notice for non-payment of dues",
-    parties: "Sender: ABC Services | Recipient: XYZ Traders",
-    facts: "Payment for services remains outstanding despite repeated reminders.",
-    relief_sought: "Clear the dues within 15 days from receipt of notice.",
-    extra_instructions: "Maintain formal tone and leave signature lines.",
+    name: "Alex Rao",
+    date: "",
+    location: "Mumbai",
+    description: "Draft an FIR-style document for a workplace theft incident involving office electronics.",
   });
-  const [result, setResult] = useState<Awaited<ReturnType<typeof createDraft>> | null>(null);
+  const [draftText, setDraftText] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
+    setDraftText(null);
+
     startTransition(async () => {
       try {
-        setResult(await createDraft(form));
+        const generated = await createDraft(form);
+        setDraftText(generated);
       } catch (submissionError) {
-        setError(submissionError instanceof Error ? submissionError.message : "Unable to generate this draft.");
+        setError(
+          submissionError instanceof Error
+            ? submissionError.message
+            : "Unable to generate the draft. Please try again.",
+        );
       }
     });
   };
 
   return (
     <div className="page-stack">
-      <section className="workspace-grid">
-        <form className="panel field-grid" onSubmit={onSubmit}>
+      <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <form className="panel space-y-6" onSubmit={onSubmit}>
           <div className="panel-copy">
             <span className="eyebrow">Draft</span>
-            <h2>Generate a first version</h2>
-            <p>Fill in the details and generate a structured legal draft you can refine later.</p>
+            <h2>Generate a legal draft</h2>
+            <p className="text-sm leading-6 text-[var(--muted)]">
+              Provide the details below and generate a professional draft output.
+            </p>
           </div>
 
           <div className="field-row">
-            <label htmlFor="draft_type">Type</label>
-            <select
-              id="draft_type"
-              value={form.draft_type}
-              onChange={(event) => setForm((current) => ({ ...current, draft_type: event.target.value }))}
-            >
-              {draftTypes.map((draftType) => (
-                <option key={draftType} value={draftType}>
-                  {draftType}
-                </option>
-              ))}
-            </select>
+            <label htmlFor="name">Name</label>
+            <input
+              id="name"
+              type="text"
+              value={form.name}
+              onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+              placeholder="Your name or client name"
+            />
           </div>
 
-          {(["title", "parties", "facts", "relief_sought", "extra_instructions"] as const).map((field) => (
-            <div key={field} className="field-row">
-              <label htmlFor={field}>{field.replaceAll("_", " ")}</label>
-              {field === "facts" || field === "extra_instructions" ? (
-                <textarea
-                  id={field}
-                  value={form[field]}
-                  onChange={(event) => setForm((current) => ({ ...current, [field]: event.target.value }))}
-                />
-              ) : (
-                <input
-                  id={field}
-                  value={form[field]}
-                  onChange={(event) => setForm((current) => ({ ...current, [field]: event.target.value }))}
-                />
-              )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="field-row">
+              <label htmlFor="date">Date</label>
+              <input
+                id="date"
+                type="date"
+                value={form.date}
+                onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
+              />
             </div>
-          ))}
+
+            <div className="field-row">
+              <label htmlFor="location">Location</label>
+              <input
+                id="location"
+                type="text"
+                value={form.location}
+                onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))}
+                placeholder="City or venue"
+              />
+            </div>
+          </div>
+
+          <div className="field-row">
+            <label htmlFor="description">Description</label>
+            <textarea
+              id="description"
+              rows={6}
+              value={form.description}
+              onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+              placeholder="Describe the facts, purpose, and any legal context"
+            />
+          </div>
 
           <button className="button" type="submit" disabled={isPending}>
-            {isPending ? "Generating..." : "Generate"}
+            {isPending ? "Generating Draft…" : "Generate Draft"}
           </button>
-          {error ? <div className="result-box">{error}</div> : null}
+
+          {error ? <div className="result-box text-sm text-[#8b3225]">{error}</div> : null}
         </form>
 
-        <div className="panel page-stack">
-          <span className="eyebrow">Draft output</span>
-          <div className="result-box mono" style={{ whiteSpace: "pre-wrap" }}>
-            {result?.content || "Generated text will appear here."}
+        <div className="space-y-4">
+          <div className="panel-copy">
+            <span className="eyebrow">Generated draft</span>
+            <p className="text-sm leading-6 text-[var(--muted)]">
+              The draft appears here after generation. Review the text and preserve line breaks.
+            </p>
+          </div>
+
+          <div className="min-h-[320px] overflow-y-auto rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-5 text-[var(--text)]">
+            {draftText ? (
+              <pre className="whitespace-pre-wrap font-mono text-sm leading-7">{draftText}</pre>
+            ) : (
+              <p className="text-[var(--muted)]">
+                Complete the form and click Generate Draft to display the output.
+              </p>
+            )}
           </div>
         </div>
       </section>

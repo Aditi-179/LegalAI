@@ -5,12 +5,10 @@ const USER_KEY = "legalai_user";
 type LoginPayload = { email: string; password: string };
 type RegisterPayload = { name: string; email: string; password: string };
 type DraftPayload = {
-  draft_type: string;
-  title: string;
-  parties: string;
-  facts: string;
-  relief_sought: string;
-  extra_instructions: string;
+  name: string;
+  date: string;
+  location: string;
+  description: string;
 };
 
 function getToken() {
@@ -122,10 +120,32 @@ export async function explainDocument(file: File) {
 }
 
 export async function createDraft(payload: DraftPayload) {
-  return request<{ content: string }>("/draft", {
+  const draftUrl = process.env.NEXT_PUBLIC_DRAFT_API_URL ?? "http://127.0.0.1:8000/draft/generate-draft";
+  const headers = new Headers({ "Content-Type": "application/json" });
+  const token = getToken();
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const response = await fetch(draftUrl, {
     method: "POST",
+    headers,
     body: JSON.stringify(payload),
   });
+
+  const text = await response.text();
+  if (!response.ok) {
+    let errorMessage = text;
+    try {
+      const payloadJson = JSON.parse(text);
+      errorMessage = payloadJson.detail ?? payloadJson.error ?? text;
+    } catch {
+      errorMessage = text;
+    }
+    throw new Error(errorMessage || `Request failed with status ${response.status}`);
+  }
+
+  return text;
 }
 
 export async function fetchHistory() {

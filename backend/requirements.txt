@@ -11,3 +11,4 @@ pgvector
 groq
 psycopg2-binary
 tqdm
+duckduckgo-search

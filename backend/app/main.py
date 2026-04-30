@@ -1,31 +1,30 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-<<<<<<< HEAD
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Dict
 
-from . import models
-from .database import SessionLocal, engine
-from .retrieval import hybrid_search
-from .llm import generate_legal_response
-=======
-from fastapi.responses import JSONResponse
-
 from app.api.router import api_router
 from app.core.config import settings
 from app.db.base import Base
-from app.db.session import engine
+from app.db.session import engine, get_db
 from app.services.seed import seed_defaults
->>>>>>> origin/main
 
+from app.retrieval import hybrid_search
+from app.llm import generate_legal_response
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    Base.metadata.create_all(bind=engine)
-    seed_defaults()
+    try:
+        Base.metadata.create_all(bind=engine)
+        seed_defaults()
+        print("✅ Database connected and initialized.")
+    except Exception as exc:
+        print(f"⚠️  Database startup failed — server will still run but DB features may be unavailable.")
+        print(f"   Reason: {exc}")
     yield
 
 
@@ -44,35 +43,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-<<<<<<< HEAD
-# Request Model (optional: can remove if unused)
-class QueryRequest(BaseModel):
-    query: str
-    top_k: int = 4
-
-class ChatRequest(BaseModel):
-    query: str
-    chat_history: List[Dict] = []
-=======
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(_: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(
         status_code=500,
         content={"detail": "Unexpected server error.", "error": str(exc)},
     )
->>>>>>> origin/main
 
+
+class ChatRequest(BaseModel):
+    query: str
+    chat_history: List[Dict] = []
 
 @app.get("/", tags=["system"])
 def root() -> dict[str, str]:
     return {"message": "LegalAI backend is online."}
 
 
-<<<<<<< HEAD
 # --- CHAT ENDPOINT (RAG + MEMORY) ---
 @app.post("/chat")
 def chat(req: ChatRequest, db: Session = Depends(get_db)):
+    """
+    Direct chat endpoint (legacy/direct access) using the RAG pipeline.
+    """
     print(f"User asked: {req.query}")
 
     # 🔍 Retrieve relevant laws
@@ -92,6 +85,5 @@ def chat(req: ChatRequest, db: Session = Depends(get_db)):
         "answer": ai_answer,
         "citations": retrieved_laws
     }
-=======
+
 app.include_router(api_router, prefix="/api/v1")
->>>>>>> origin/main

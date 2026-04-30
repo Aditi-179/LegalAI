@@ -10,7 +10,7 @@ def log_event(db: Session, event_type: str, message: str, level: str = "info", m
         event_type=event_type,
         message=message,
         level=level,
-        metadata_json=json.dumps(metadata or {}),
+        metadata_json=json.dumps(metadata or {}, default=str),
     )
     db.add(entry)
     db.commit()

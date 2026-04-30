@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import auth, draft, health, history, mapping, query, upload
+from app.api.routes import auth, draft, health, history, mapping, query, upload, schemes
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["health"])
@@ -10,4 +10,5 @@ api_router.include_router(mapping.router, prefix="/map", tags=["mapping"])
 api_router.include_router(upload.router, prefix="/upload", tags=["upload"])
 api_router.include_router(draft.router, prefix="/draft", tags=["draft"])
 api_router.include_router(history.router, prefix="/history", tags=["history"])
+api_router.include_router(schemes.router, prefix="/schemes", tags=["schemes"])
 

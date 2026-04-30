@@ -25,7 +25,7 @@ def hash_password(password: str) -> str:
 def create_access_token(subject: str) -> str:
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
     payload = {"sub": subject, "exp": int(expires_at.timestamp())}
-    encoded_payload = base64.urlsafe_b64encode(json.dumps(payload).encode("utf-8")).decode("utf-8")
+    encoded_payload = base64.urlsafe_b64encode(json.dumps(payload, default=str).encode("utf-8")).decode("utf-8")
     signature = hmac.new(
         settings.jwt_secret_key.encode("utf-8"),
         encoded_payload.encode("utf-8"),
